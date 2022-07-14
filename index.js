@@ -1,36 +1,107 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { Client, Collection, Intents } = require('discord.js');
-const { prefix, token } = require('./config.json');
+const Discord = require('discord.js');
+const fs = require("fs");
+const path = require("path");
+const logger = require("./logs.js")
+const modules = require("./modules/modules.js");
+const { prefix, token, EnabledModules } = require('./config.json');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const Bot = new Discord.Client();
+Bot.commands = new Discord.Collection();
+Bot.queues = new Map();
 
-client.commands = new Collection();
-const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+const commandFiles = fs
+.readdirSync(path.join(__dirname,"/modules/src/commands"))
+.filter(filename => filename.endsWith(".js"));
 
-for (const file of commandFiles) {
-	const filePath = path.join(commandsPath, file);
-	const command = require(filePath);
-	client.commands.set(command.data.name, command);
+for (var filename of commandFiles) {
+  const command = require(`./modules/src/commands/${filename}`);
+  Bot.commands.set(command.name, command);
 }
 
-client.once('ready', () => {
-	console.log(`Bot Pronto`);
+ Bot.once('ready', async (client) => {
+
+  var servers = "";
+    for (const guild of Bot.guilds.cache.array()) {
+      servers = servers + (servers === "" ? guild.name : ", "+guild.name);
+    }
+
+    logger.serversMessage(servers);
+    var channels = await getChannels();
+    logger.info("iniciando módulos...");
+    await modules.init(channels);
+    logger.success("Bot iniciado");
 });
 
-  client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
+const fetchThisChannel = async (ret, args, channel) => {
+  if (channel.name.search(args[0]) !== -1) {
+      await Bot.channels.fetch(channel.id)
+      .then(thisChn => {
+          ret[args[1]].push(thisChn.messages.channel)
+      })
+  }
+}
 
-    const command = client.commands.get(interaction.commandName);
-  
-    if (!command) return;
-  
-    try {
-      await command.execute(interaction);
-    } catch (error) {
-      console.error(error);
-      await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-    }
-  });
-client.login(token);
+const forEachChannel = async(element, ret, channel) => {
+  var args = element.split('@');
+  await fetchThisChannel(ret, args, channel); 
+}
+
+const fetchChannels = async (channel, ret) => {
+  EnabledModules.forEach(element => forEachChannel(element, ret, channel));
+}
+const getChannels = async () => {
+  let channels = Bot.channels.cache.array();
+  var ret = {
+      cotation: [],
+      holidays: [],
+      weather: []
+  }
+  for (const channel of channels) 
+  {
+      await fetchChannels(channel, ret);
+  }
+
+  return ret;
+}
+
+const createChannel = async (guild, element) => {
+  var args = element.split('@')
+  guild.channels.create(args[0], { reason: 'Criação dos chats!' })
+  .then( (GuildChannel) => {
+      logger.info(`Canal criado ${GuildChannel.name} no servidor ${guild.name}`)
+      GuildChannel.send("Canal criado!");
+  })
+  .catch(console.error);
+}
+
+const updateModules = async () => {
+  await modules.update(await getChannels());
+}
+
+Bot.on('guildCreate', async (guild) => {
+  logger.join(guild.name);
+  logger.info('Criando canais...');
+  EnabledModules.forEach(element => createChannel(guild, element));
+
+  setTimeout(()=>{
+      logger.info('Atualizando módulos...');
+      updateModules();
+      logger.info('Módulos atualizados.');
+  }, 5000);
+
+})
+
+Bot.on('message', async (message) => {
+  if (!message.content.startsWith(prefix) || message.author.bot) return;
+
+  const args = message.content.slice(prefix.length).split(" ");
+  const command = args.shift();
+
+  try {
+  Bot.commands.get(command).execute(Bot, message, args);
+  } catch(e) {
+    return message.reply("não conheço esse comando");
+  }
+});
+
+Bot.login(token);

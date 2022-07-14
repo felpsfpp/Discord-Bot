@@ -1,2 +1,2 @@
-node deploy-commands.js
-node index.js
+nodemon index.js
+pause

@@ -1,10 +1,9 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const execute = (Bot, message, args) => {
+};
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('clear')
-		.setDescription('Limpa até 99 menssagens.')
-		.addIntegerOption(option => option.setName('quantidade').setDescription('Numero de mensagens para apagar')),
+		name: "clear",
+		help: "Limpa até 99 menssagens",
 	async execute(interaction) {
 		const amount = interaction.options.getInteger('quantidade');
 
