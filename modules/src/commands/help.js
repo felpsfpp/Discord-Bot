@@ -1,5 +1,5 @@
 const execute = (Bot, message, args) => {
-    let string = "**===== AJUDA =====**\n\n";
+    let string = "**===== COMANDOS =====**\n\n";
     Bot.commands.forEach((command) => {
       if (command.help) {
         string += `**${command.name}**: ${command.help}\n`;

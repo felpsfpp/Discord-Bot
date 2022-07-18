@@ -3,7 +3,7 @@ const playSong = require("./play").playSong;
 const execute = (Bot, message, args) => {
   const queue = Bot.queues.get(message.guild.id);
   if (!queue) {
-    return msg.reply("não existe nenhuma música sendo reproduzida");
+    return msg.reply("Não existe nenhuma música sendo reproduzida");
   }
   queue.songs.shift();
   Bot.queues.set(message.guild.id, queue);

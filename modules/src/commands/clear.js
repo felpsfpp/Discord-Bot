@@ -1,20 +1,14 @@
-const execute = (Bot, message, args) => {
-};
-
+ const execute = async (Bot, message, args) => {
+    if(!args[0]) return message.channel.send('Por Favor especifique o numero de mensagens a serem deletadas de 1 - 99')
+        if(isNaN(args[0])) return message.channel.send('Somente numeros são permitidos')
+        if(parseInt(args[0]) > 99) return message.channel.send('a quantidade maxima de mensagens que posso deletar é 99')
+        await message.channel.bulkDelete(parseInt(args[0]) + 1)
+            .catch(err => console.log(err))
+        message.channel.send('Deletei ' + args[0]  + " messagens.")
+  };
+  
 module.exports = {
-		name: "clear",
-		help: "Limpa até 99 menssagens",
-	async execute(interaction) {
-		const amount = interaction.options.getInteger('quantidade');
-
-		if (amount < 1 || amount > 99) {
-			return interaction.reply({ content: 'Você precisa colocar um numero de 1 a 99.', ephemeral: true });
-		}
-		await interaction.channel.bulkDelete(amount, true).catch(error => {
-			console.error(error);
-			interaction.reply({ content: 'Erro!', ephemeral: true });
-		});
-
-		return interaction.reply({ content: `Apaguei \`${amount}\` mensagens.`, ephemeral: false });
-	},
+    name : 'clear',
+    help: "Apaga até 99 mensagens",
+    execute,
 };

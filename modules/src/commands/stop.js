@@ -1,7 +1,7 @@
 const execute = (Bot, message, args) => {
   const queue = Bot.queues.get(message.guild.id);
   if (!queue) {
-    return message.reply("não existe nenhuma música sendo reproduzida");
+    return message.reply("Não existe nenhuma música sendo reproduzida");
   }
   queue.songs = [];
   Bot.queues.set(message.guild.id, queue);
